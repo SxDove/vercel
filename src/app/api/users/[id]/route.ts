@@ -8,13 +8,11 @@ export async function PUT(
   try {
     const { id } = await params;
     const { name, email } = await request.json();
-    await pool.execute(
-      'UPDATE users SET name = ?, email = ? WHERE id = ?',
+    const result = await pool.query(
+      'UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING *',
       [name, email, id]
     );
-    const [updatedUser] = await pool.execute('SELECT * FROM users WHERE id = ?', [id]);
-    const users = updatedUser as any[];
-    return NextResponse.json(users[0]);
+    return NextResponse.json(result.rows[0]);
   } catch (error) {
     return NextResponse.json({ error: '更新用户失败' }, { status: 500 });
   }
@@ -26,7 +24,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await pool.execute('DELETE FROM users WHERE id = ?', [id]);
+    await pool.query('DELETE FROM users WHERE id = $1', [id]);
     return NextResponse.json({ message: '删除成功' });
   } catch (error) {
     return NextResponse.json({ error: '删除用户失败' }, { status: 500 });
